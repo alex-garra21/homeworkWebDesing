@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Equipo } from '../types';
+import type { Equipo, Prestamo } from '../types';
 import { Encabezado } from '../components/Encabezado';
 import { ListaEquipos } from '../components/ListaEquipos';
 import { FormularioPrestamo } from '../components/FormularioPrestamo';
@@ -16,7 +16,8 @@ const EQUIPOS_INICIALES: Equipo[] = [
 ];
 
 export const Inventario = () => {
-  const [equipos] = useState<Equipo[]>(EQUIPOS_INICIALES);
+  const [equipos, setEquipos] = useState<Equipo[]>(EQUIPOS_INICIALES);
+  const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<Equipo | null>(null);
 
   const handleAbrirFormulario = (id: number) => {
@@ -24,8 +25,34 @@ export const Inventario = () => {
     setEquipoSeleccionado(seleccionado);
   };
 
-  const handleGuardarTemporal = (datos: { solicitante: string; carne: string; fechaLimite: string }) => {
-    console.log('Datos recibidos del formulario:', datos);
+  // 2. Procesar el préstamo de forma inmutable
+  const handleGuardarPrestamo = (datos: { solicitante: string; carne: string; fechaLimite: string }) => {
+    if (!equipoSeleccionado) return;
+
+    // Crear el nuevo objeto de préstamo
+    const nuevoPrestamo: Prestamo = {
+      id: Date.now(), // ID numérico único local
+      equipoId: equipoSeleccionado.id,
+      solicitante: datos.solicitante,
+      carne: datos.carne,
+      fechaPrestamo: new Date().toISOString(),
+      fechaLimite: datos.fechaLimite,
+      devuelto: false,
+    };
+
+    // Actualización inmutable del arreglo de préstamos con spread operator
+    setPrestamos((prevPrestamos) => [...prevPrestamos, nuevoPrestamo]);
+
+    // Actualización inmutable de equipos con .map() (equipo pasa a disponible: false)
+    setEquipos((prevEquipos) =>
+      prevEquipos.map((item) =>
+        item.id === equipoSeleccionado.id
+          ? { ...item, disponible: false }
+          : item
+      )
+    );
+
+    // Cerrar el modal
     setEquipoSeleccionado(null);
   };
 
@@ -37,7 +64,7 @@ export const Inventario = () => {
       {equipoSeleccionado && (
         <FormularioPrestamo
           equipo={equipoSeleccionado}
-          onGuardar={handleGuardarTemporal}
+          onGuardar={handleGuardarPrestamo}
           onCancelar={() => setEquipoSeleccionado(null)}
         />
       )}
