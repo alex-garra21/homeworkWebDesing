@@ -3,14 +3,19 @@ import type { Prestamo, Equipo } from '../types';
 interface PrestamosActivosProps {
   prestamos: Prestamo[];
   equipos: Equipo[];
-  onDevolver: (prestamoId: number, equipoId: number) => void;
+  onDevolver: (prestamoId: number, equipoId: number) => Promise<void>;
+  devolviendoId?: number | null;
 }
 
-export const PrestamosActivos = ({ prestamos, equipos, onDevolver }: PrestamosActivosProps) => {
-  // Filtrar únicamente los préstamos no devueltos
+export const PrestamosActivos = ({
+  prestamos,
+  equipos,
+  onDevolver,
+  devolviendoId = null,
+}: PrestamosActivosProps) => {
   const prestamosPendientes = prestamos.filter((p) => !p.devuelto);
 
-  // Regla de variante (8 o 9): Ordenar por fecha límite, el más próximo primero
+  // Regla de variante (8 o 9): Ordenar por fecha límite ascendente
   const prestamosOrdenados = [...prestamosPendientes].sort((a, b) => {
     return new Date(a.fechaLimite).getTime() - new Date(b.fechaLimite).getTime();
   });
@@ -41,6 +46,7 @@ export const PrestamosActivos = ({ prestamos, equipos, onDevolver }: PrestamosAc
           <tbody>
             {prestamosOrdenados.map((prestamo) => {
               const estaVencido = new Date(prestamo.fechaLimite) < hoy;
+              const enProceso = devolviendoId === prestamo.id;
 
               return (
                 <tr
@@ -62,10 +68,15 @@ export const PrestamosActivos = ({ prestamos, equipos, onDevolver }: PrestamosAc
                   </td>
                   <td style={{ padding: '8px' }}>
                     <button
+                      disabled={enProceso}
                       onClick={() => onDevolver(prestamo.id, prestamo.equipoId)}
-                      style={{ padding: '4px 8px', cursor: 'pointer' }}
+                      style={{
+                        padding: '4px 8px',
+                        cursor: enProceso ? 'not-allowed' : 'pointer',
+                        opacity: enProceso ? 0.6 : 1,
+                      }}
                     >
-                      Devolver
+                      {enProceso ? 'Devolviendo...' : 'Devolver'}
                     </button>
                   </td>
                 </tr>
