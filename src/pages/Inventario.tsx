@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Equipo } from '../types';
 import { Encabezado } from '../components/Encabezado';
 import { ListaEquipos } from '../components/ListaEquipos';
+import { FormularioPrestamo } from '../components/FormularioPrestamo';
 
 const EQUIPOS_INICIALES: Equipo[] = [
   { id: 1, nombre: 'Switch Cisco 2960 24 Puertos', categoria: 'Switch', disponible: true },
@@ -16,15 +17,30 @@ const EQUIPOS_INICIALES: Equipo[] = [
 
 export const Inventario = () => {
   const [equipos] = useState<Equipo[]>(EQUIPOS_INICIALES);
+  const [equipoSeleccionado, setEquipoSeleccionado] = useState<Equipo | null>(null);
 
-  const handlePrestar = (id: number) => {
-    console.log(`Prestar equipo con ID: ${id}`);
+  const handleAbrirFormulario = (id: number) => {
+    const seleccionado = equipos.find((e) => e.id === id) || null;
+    setEquipoSeleccionado(seleccionado);
+  };
+
+  const handleGuardarTemporal = (datos: { solicitante: string; carne: string; fechaLimite: string }) => {
+    console.log('Datos recibidos del formulario:', datos);
+    setEquipoSeleccionado(null);
   };
 
   return (
     <main style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
       <Encabezado equipos={equipos} />
-      <ListaEquipos equipos={equipos} onPrestar={handlePrestar} />
+      <ListaEquipos equipos={equipos} onPrestar={handleAbrirFormulario} />
+
+      {equipoSeleccionado && (
+        <FormularioPrestamo
+          equipo={equipoSeleccionado}
+          onGuardar={handleGuardarTemporal}
+          onCancelar={() => setEquipoSeleccionado(null)}
+        />
+      )}
     </main>
   );
 };
