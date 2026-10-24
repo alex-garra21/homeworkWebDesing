@@ -3,6 +3,7 @@ import type { Equipo, Prestamo } from '../types';
 import { Encabezado } from '../components/Encabezado';
 import { ListaEquipos } from '../components/ListaEquipos';
 import { FormularioPrestamo } from '../components/FormularioPrestamo';
+import { PrestamosActivos } from '../components/PrestamosActivos';
 
 const EQUIPOS_INICIALES: Equipo[] = [
   { id: 1, nombre: 'Switch Cisco 2960 24 Puertos', categoria: 'Switch', disponible: true },
@@ -25,13 +26,11 @@ export const Inventario = () => {
     setEquipoSeleccionado(seleccionado);
   };
 
-  // 2. Procesar el préstamo de forma inmutable
   const handleGuardarPrestamo = (datos: { solicitante: string; carne: string; fechaLimite: string }) => {
     if (!equipoSeleccionado) return;
 
-    // Crear el nuevo objeto de préstamo
     const nuevoPrestamo: Prestamo = {
-      id: Date.now(), // ID numérico único local
+      id: Date.now(),
       equipoId: equipoSeleccionado.id,
       solicitante: datos.solicitante,
       carne: datos.carne,
@@ -40,26 +39,45 @@ export const Inventario = () => {
       devuelto: false,
     };
 
-    // Actualización inmutable del arreglo de préstamos con spread operator
     setPrestamos((prevPrestamos) => [...prevPrestamos, nuevoPrestamo]);
 
-    // Actualización inmutable de equipos con .map() (equipo pasa a disponible: false)
     setEquipos((prevEquipos) =>
       prevEquipos.map((item) =>
-        item.id === equipoSeleccionado.id
-          ? { ...item, disponible: false }
-          : item
+        item.id === equipoSeleccionado.id ? { ...item, disponible: false } : item
       )
     );
 
-    // Cerrar el modal
     setEquipoSeleccionado(null);
+  };
+
+  const handleDevolver = (prestamoId: number, equipoId: number) => {
+    // 1. Marcar préstamo como devuelto inmutablemente
+    setPrestamos((prevPrestamos) =>
+      prevPrestamos.map((p) =>
+        p.id === prestamoId ? { ...p, devuelto: true } : p
+      )
+    );
+
+    // 2. Marcar equipo nuevamente como disponible
+    setEquipos((prevEquipos) =>
+      prevEquipos.map((eq) =>
+        eq.id === equipoId ? { ...eq, disponible: true } : eq
+      )
+    );
   };
 
   return (
     <main style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
       <Encabezado equipos={equipos} />
+      
+      <h2>Inventario de Equipos</h2>
       <ListaEquipos equipos={equipos} onPrestar={handleAbrirFormulario} />
+
+      <PrestamosActivos
+        prestamos={prestamos}
+        equipos={equipos}
+        onDevolver={handleDevolver}
+      />
 
       {equipoSeleccionado && (
         <FormularioPrestamo
